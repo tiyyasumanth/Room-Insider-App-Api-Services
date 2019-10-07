@@ -1,0 +1,272 @@
+1) Download django respective os version set up the env
+
+2)create a project in a drive---    django-admin startproject <projectname>
+
+3)open project in vs code and run server ----   python manage.py runserver
+
+Main files
+------------
+Manage.py:::::  to run the application this file plays an imp role.
+wsgi.py::::  to deploy project this file is used.
+settings.py:::: for application settings for configaration our web site..
+url.py::: for rendering the files.
+__init__.py::::  to view this directy to view python package.
+
+ Create a app in project
+--------------------------------
+python manage.py startapp <appname>
+
+create a 'hellow world' web page
+------------------------------------------
+1)In <app>(sub project) create a method which returns http response in views.py
+
+from django.shortcuts import render
+from django.http import HttpResponse
+
+# Create your views here.
+def index(request):
+    return HttpResponse("<h1> Hellow World</h1>")
+
+
+2)register the above method in urls.py(add new file )
+
+from . import views
+from django.conf.urls import url
+
+urlpatterns = [
+    url(r'^$',views.index, name='index'),
+] 
+
+
+3) register the above urls in main project of urls.py
+
+from django.contrib import admin
+from django.urls import path
+from django.conf.urls import include,url
+
+
+urlpatterns = [
+    url('admin/', admin.site.urls),
+    url('app1/', include('app.urls')),
+]
+
+note::: include is used to use sub projects in main project
+
+
+
+database connectivity
+------------------------------
+create table Person_Details(ID int,FIRST_NAME varchar(20),LAST_NAME varchar(20),MOBILE_NUM varchar(20),
+ALT_NUM varchar(20),CITY varchar(10),STREET varchar(20),ADDRESS varchar(50),DESIGNATION varchar(30),MARITAL_STAUS varchar(20),STATUS varchar(10))
+
+
+create table Room_Rent_Details(ID int,ROOM_RENT decimal,INTERNET decimal,
+POWER_BILL decimal,RICE_BILL decimal,NUMBER_OF_UNITS_CURRENT_BILL int,MAINTAINENCE_BILL decimal,SWEEPER_BILL decimal,
+PROVISIONS_BILL decimal,WATER_BILL decimal,COMMENTS varchar(1024),BILL_GENERATED_DATE datetime,PAYMENT_DUE_DATE datetime,PAYMENT_TYPE varchar(30),
+UNBILLED_AMOUNT decimal,TOTAL_AMT_TO_PAY decimal,STATUS varchar(10))
+
+create table User_login_Details(Id NUMBER(5) PRIMARY KEY,USERNAME varchar(20),password varchar(50),createddate date);
+
+insert into Person_Details values(1,'Sumanth','Tiyya','8500755835',NULL,'Hyd','Sanath Nagar','MK Villa','Employee','Single','A')
+
+insert into Room_Rent_Details values(1,2335,265,150,200,200,150,100,150,120,'Not Paid',getdate(),NULL,'By cash',3670,3670,'Not Paid')
+
+alter table
+   Room_Rent_Details
+add
+   (
+   Name varchar(20)
+   );
+
+
+1)import pyodbc
+
+2)Connect and print db data
+def getdata():
+    conn = pyodbc.connect('Trusted_Connection=yes', driver = '{SQL Server}',server = 'SUMANTH\SQLSERVER', database = 'RoomRentDetails')
+    cursor = conn.cursor()
+    cursor.execute("select * from Person_Details")
+    rows = cursor.fetchall()
+    print(rows)
+
+
+
+Error:: SEC7120: [CORS] The origin 'http://localhost:4200' did not find 'http://localhost:4200' in 
+the Access-Control-Allow-Origin response header for cross-origin  resource at 'http://127.0.0.1:8000/app1/'.
+
+solution: To solve solution install cross heders
+               pip install django-cors-headers
+
+  add above app in settings.py
+    INSTALLED_APPS = [
+    'django.contrib.admin',
+    'corsheaders',
+] 
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+CORS_ORIGIN_ALLOW_ALL=True
+
+
+error::
+forbidden (csrf cookie not set.)
+ import in view
+from django.views.decorators.csrf import csrf_exempt
+
+add below attribute to view method
+@csrf_exempt
+def loginview(request):
+
+in settings file:
+CSRF_COOKIE_SECURE = True
+
+
+Note: return httpresponse json data
+          import json
+
+# Create your views here.
+response_data = {}
+response_data['result'] = 'error'
+response_data['message'] = 'Some error message'
+
+def index(request):
+    return HttpResponse(json.dumps(response_data), content_type="application/json")
+
+
+
+Error:::
+[object Object]: {error: Object, headers: Object, message: "Http failure response for http://127.0.0.1:8000/app2/: 0 Unknown Error", name: "HttpErrorResponse", ok: false...}
+
+
+Solution: convert data into json   json.dumps(<our data object>)
+
+error 2
+-------
+TypeError: Object of type datetime is not JSON serializable
+
+solution:convert into string using converters
+
+ return json.dumps(mainlist,default = getloginview.myconverter)
+
+    def myconverter(o):
+        if isinstance(o, datetime.datetime):
+            return "{}-{}-{}".format(o.year, o.month, o.day)
+
+
+
+
+
+
+
+Synnc with mysql
+------------------------
+pip install mysqlclient
+
+python manage.py makemigrations
+python manage.py migrte
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',   -----mysql db
+        'NAME': 'roomdetails',                             -----name of db
+        'USER': 'root',                                           ------user name
+        'PASSWORD': '',                                      ------- passward
+        'HOST': '127.0.0.1',                                  ---------- where db is hosted
+        'PORT': '3306',
+    }
+}
+
+sync with oracle
+--------------------
+pip install cx_Oracle
+
+set up--
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'ORCL',
+        'USER': 'system',
+        'PASSWORD': 'Sumanth4a9',
+        'HOST': 'localhost',
+        'PORT': '1522',
+        
+    }
+}
+
+models,serilizers
+--------------------
+models: create model which ewule to db table columns and serilizer is used to convert into json 
+
+pip install djangorestframework
+ 
+add 'rest_framework', in settings.py and if create any sub app add that to settings.py
+
+
+model structure---
+
+class djmodel(models.Model):
+    ID=models.IntegerField(db_column='ID',primary_key=True)
+    FirstName=models.TextField(db_column='NAME')
+    LastName=models.TextField(db_column='LASTNAME',)
+    class Meta:
+        managed=True                         ----------------cannot alter db statements
+        db_table='rdetails'                    --------------- table name 
+
+serializer structure-----
+
+from rest_framework import serializers
+from djapp.models import djmodel
+
+class djserilizer(serializers.ModelSerializer):
+    class Meta:
+        model=djmodel                          ---------------model is converted to json
+        fields='__all__'                            ---------------to set all columns in model
+
+view structure----
+
+from django.shortcuts import render
+from djapp.models import djmodel
+from djapp.serializer import djserilizer
+from rest_framework import generics
+from rest_framework.response import Response
+
+# Create your views here.
+
+class djview(generics.ListCreateAPIView):
+    print('hai')
+    queryset=djmodel.objects.all()
+    serializer_class=djserilizer
+
+
+note:: generics. contains default save delete create  the db. we can override the methods
+
+Debugging:
+--------------
+Goto debug tab add configur launch.json(django web application) file and add python env by pressing ctrl+shift+p select python version and add >python:selector
+
+encode and decode
+------------------------
+use import base64 to encode and decode
+def perform_create(self,serializer):
+        print(self.request.data['password'])
+        password=self.request.data['password']
+        encriptedpassword=base64.b64encode(password.encode('utf-8'))
+        serializer.save(id=1,password=encriptedpassword)
+
+
+
+from rest_framework import routers
+
+router = routers.SimpleRouter()
+router.register(r'users', UserViewSet)
+router.register(r'accounts', AccountViewSet)
+urlpatterns = router.urls
+There are two mandatory arguments to the register() method:
+prefix - The URL prefix to use for this set of routes.
+viewset - The viewset class.
